@@ -2,24 +2,23 @@ precision mediump float;
 
 //Cube
 attribute vec3 vPosition;
-attribute vec3 vColor;
+attribute vec2 vTexCoord;
 attribute vec3 vNormal;
 
-varying vec3 fColor;
+varying vec3 fNormal;
+varying vec3 fPosition;
+varying vec2 fTexCoord;
 
 uniform float theta;
-uniform mat4 projectionMatrix;
-uniform mat4 viewMatrix;  //Posisi kamera
 uniform mat4 modelMatrix;
-
-uniform vec3 diffuseColor;
-uniform vec3 diffuseDirection;
-uniform mat3 normalMatrix;  //Berperan sebagai modelMatrix vector normal
-uniform vec3 ambientColor;
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat3 normalMatrix;  // Berperan sebagai modelMatrix-nya vektor normal
 
 //P
 attribute vec3 vPositionP;
-attribute vec3 vColorP;
+varying vec3 fColor;
+attribute vec3 vColor;
 uniform float scaleX, scaleY, translateX, translateY, translateZ;
 
 //Switch
@@ -45,15 +44,23 @@ void main()
 
   if(flag == 0.0)
   {
-    fColor = vColor;
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vPosition, 1.0);
 
+    // Transfer koordinat tekstur ke fragment shader
+    fTexCoord = vTexCoord;
+
+    // Transfer vektor normal (yang telah ditransformasi) ke fragment shader
+    fNormal = normalize(normalMatrix * vNormal);
+
+    // Transfer posisi verteks
+    fPosition = vec3(modelMatrix * vec4(vPosition, 1.0));
 
   }
   else if(flag == 1.0)
   {
-    fColor = vColorP;
+    fColor = vColor;
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * mTransformP * mScale * vec4(vPositionP, 1.0);
+
   }
   
 }
