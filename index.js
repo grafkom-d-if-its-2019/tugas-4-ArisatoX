@@ -1,13 +1,12 @@
 (function() {
 
   var canvas, gl, vertexShader, fragmentShader, program,
-  thetaUniformLocation, theta, thetaSpeed, axis, x, y, z, n1, n2,
-  mmLoc, mm, vmLoc, vm, pmLoc, pm, camera, nmLoc, dc, dd, ac, dcLoc, ddLoc, acLoc,
-  flagUniformLocation, flag, scaleXUniformLocation, scaleYUniformLocation, scaleX,
+  thetaSpeed, axis, x, y, z, n1, n2,
+  mmLoc, mm, vmLoc, vm, pmLoc, pm, camera, nmLoc, dc, dd, ac, dcLoc, ddLoc, acLoc, vPositionP,
+  flagUniformLocation, flag, scaleXUniformLocation, scaleX,
   translateX, translateXUniformLocation, translateY, translateYUniformLocation, translateZ, translateZUniformLocation,
-  animationX, animationY, animationZ,
-  viewWorldPositionLocation, shininessLocation;
-
+  animationX, animationY, animationZ;
+  
   // Vertex Cube
   var vertices = [];
 
@@ -21,26 +20,24 @@
     [  0.8,  0.8, -0.8 ],
     [  0.8, -0.8, -0.8 ]
   ];
-
   var cubeColors = [
     [],
-    [], // merah
+    [1.0, 0.0, 0.0], // merah
     [0.0, 1.0, 0.0], // hijau
     [0.0, 0.0, 1.0], // biru
-    [1.0, 0.0, 0.0], // putih
+    [1.0, 1.0, 1.0], // putih
     [1.0, 0.5, 0.0], // oranye
     [1.0, 1.0, 0.0], // kuning
     []
   ];
-
   var cubeNormals = [
     [],
-    [], // depan
-    [-1.0, 0.0, 0.0], // kanan
-    [0.0, 1.0, 0.0], // bawah
-    [0.0, 0.0, 1.0], // belakang
-    [1.0, 0.0, 0.0], // kiri
-    [0.0, -1.0, 0.0], // atas
+    [  0.0,  0.0,  1.0 ], // depan
+    [  1.0,  0.0,  0.0 ], // kanan
+    [  0.0, -1.0,  0.0 ], // bawah
+    [  0.0,  0.0, -1.0 ], // belakang
+    [ -1.0,  0.0,  0.0 ], // kiri
+    [  0.0,  1.0,  0.0 ], // atas
     []
   ];
 
@@ -48,68 +45,15 @@
   var vertices5 = [],
   vertices6 = [
     
-  -0.07, -0.1, 0.0, 1.0, 1.0, 1.0, 
-  -0.07, 0.4, 0.0, 1.0, 1.0, 1.0,
-  -0.13, -0.1, 0.0, 1.0, 1.0, 1.0,
-  -0.07, 0.4, 0.0, 1.0, 1.0, 1.0,
-  -0.13, 0.3, 0.0, 1.0, 1.0, 1.0,
-  -0.13, 0.4, 0.0, 1.0, 1.0, 1.0,
-  -0.07, 0.35, 0.0, 1.0, 1.0, 1.0
+  -0.07, -0.1, 0.0, 1.0, 0.5, 0.0, 
+  -0.07, 0.4, 0.0, 1.0, 0.5, 0.0,
+  -0.13, -0.1, 0.0, 1.0, 0.5, 0.0,
+  -0.07, 0.4, 0.0, 1.0, 0.5, 0.0,
+  -0.13, 0.3, 0.0, 1.0, 0.5, 0.0,
+  -0.13, 0.4, 0.0, 1.0, 0.5, 0.0,
+  -0.07, 0.35, 0.0, 1.0, 0.5, 0.0
   
   ];
-
-  // Fill the buffer with texture coordinates the cube.
-// function setTexcoords(gl) {
-//   gl.bufferData(
-//       gl.ARRAY_BUFFER,
-//       new Float32Array(
-//         [
-//         // select the top left image
-//         0   , 0  ,
-//         0   , 0.5,
-//         0.25, 0  ,
-//         0   , 0.5,
-//         0.25, 0.5,
-//         0.25, 0  ,
-//         // select the top middle image
-//         0.25, 0  ,
-//         0.5 , 0  ,
-//         0.25, 0.5,
-//         0.25, 0.5,
-//         0.5 , 0  ,
-//         0.5 , 0.5,
-//         // select to top right image
-//         0.5 , 0  ,
-//         0.5 , 0.5,
-//         0.75, 0  ,
-//         0.5 , 0.5,
-//         0.75, 0.5,
-//         0.75, 0  ,
-//         // select the bottom left image
-//         0   , 0.5,
-//         0.25, 0.5,
-//         0   , 1  ,
-//         0   , 1  ,
-//         0.25, 0.5,
-//         0.25, 1  ,
-//         // select the bottom middle image
-//         0.25, 0.5,
-//         0.25, 1  ,
-//         0.5 , 0.5,
-//         0.25, 1  ,
-//         0.5 , 1  ,
-//         0.5 , 0.5,
-//         // select the bottom right image
-//         0.5 , 0.5,
-//         0.75, 0.5,
-//         0.5 , 1  ,
-//         0.5 , 1  ,
-//         0.75, 0.5,
-//         0.75, 1  ,
-
-//       ]),
-//       gl.STATIC_DRAW);
-// }
 
   //Quad
   function quad(a, b, c, d) {
@@ -122,7 +66,7 @@
         vertices.push(cubeColors[a][j]);
       }
       for (var j=0; j < 3; j++) {
-        vertices.push(cubeNormals[a][j]);
+        vertices.push(-1*cubeNormals[a][j]);
       }
       switch (indices[i]) {
         case a:
@@ -147,25 +91,6 @@
       }
     }
   }
-
-  // function quadline(a, b, c, d) {
-  //   var indices = [a, b, c, d, a];
-
-  //   for (var i=0; i < indices.length; i++) {
-      
-  //     for (var j=0; j < 3; j++) {
-  //       vertices.push(cubePoints[indices[i]][j]);
-  //     }
-
-  //     for (var j=0; j < 3; j++) {
-  //       vertices.push(cubeColors[a][j]);
-  //     }
-
-  //     for (var j=0; j < 3; j++) {
-  //       vertices.push(cubeNormals[a][j]);
-  //     }
-  //   }
-  // }
 
   // GL Size
   function initGlSize() {
@@ -263,12 +188,12 @@
     var vert1 = [
       Math.sin(j) * x + y1,
       Math.cos(j) * x + y2,
-      0.0, 1.0, 1.0, 1.0
+      0.0, 1.0, 0.5, 0.0
     ];
     var vert2 = [
       Math.sin(j) * 0.5 * x + y1,
       Math.cos(j) * 0.5 * x + y2,
-      0.0, 1.0, 1.0, 1.0
+      0.0, 1.0, 0.5, 0.0
     ];
     
     vertices = vertices.concat(vert1);
@@ -280,7 +205,7 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-    var vPositionP = gl.getAttribLocation(program, 'vPositionP');
+    vPositionP = gl.getAttribLocation(program, 'vPositionP');
     var vColor = gl.getAttribLocation(program, 'vColor');
 
     gl.vertexAttribPointer(
@@ -337,35 +262,17 @@
     );
     gl.uniformMatrix4fv(pmLoc, false, pm);
 
+    // Uniform untuk pencahayaan
+    dcLoc = gl.getUniformLocation(program, 'diffuseColor');
+    dc = glMatrix.vec3.fromValues(1.0, 1.0, 1.0);  // rgb
+    gl.uniform3fv(dcLoc, dc);
+    
+    acLoc = gl.getUniformLocation(program, 'ambientColor');
+    ac = glMatrix.vec3.fromValues(0.17, 0.40, 0.41);
+    gl.uniform3fv(acLoc, ac);
+
     //Uniform untuk modelMatrix vektor normal
     nmLoc = gl.getUniformLocation(program, 'normalMatrix');
-
-    // Create a texture.
-    var texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-
-    // Fill the texture with a 1x1 blue pixel.
-    gl.texImage2D(
-      gl.TEXTURE_2D, 
-      0, 
-      gl.RGBA, 
-      1, 
-      1, 
-      0, 
-      gl.RGBA, 
-      gl.UNSIGNED_BYTE,
-      new Uint8Array([0, 0, 255, 255])
-    );
-
-    // Asynchronously load an image
-    var image = new Image();
-    image.src = "images/2_edit.jpg";
-    image.addEventListener('load', function() {
-      // Now that the image has loaded make copy it to the texture.
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
-      gl.generateMipmap(gl.TEXTURE_2D);
-    });
 
     //Set scale refleksi
     scaleXUniformLocation = gl.getUniformLocation(program, 'scaleX');
@@ -385,26 +292,6 @@
     translateZ = 0.0; 
     gl.uniform1f(translateZUniformLocation, translateZ);
 
-    //Set Lighting
-    dcLoc = gl.getUniformLocation(program, 'diffuseColor');
-    ddLoc = gl.getUniformLocation(program, 'diffusePosition');
-    acLoc = gl.getUniformLocation(program, 'ambientColor');
-    center = gl.getUniformLocation(program, 'diffusePosition');
-
-    dc = glMatrix.vec3.fromValues(1.0, 1.0, 1.0); //Diffuse Color
-    gl.uniform3fv(dcLoc, dc);
-    ac = glMatrix.vec3.fromValues(0.17, 0.40, 0.41); //Ambient Color
-    gl.uniform3fv(acLoc, ac);
-
-    specularColor = gl.getUniformLocation(program, 'specularColor');
-    viewWorldPositionLocation = gl.getUniformLocation(program, "u_viewWorldPosition");
-    shininessLocation = gl.getUniformLocation(program, "u_shininess");
-
-    spec = glMatrix.vec3.fromValues(1.0, 0.0, 0.0); //Diffuse Color
-    gl.uniform3fv(specularColor, spec);
-    shininess = 41;
-    gl.uniform1f(shininessLocation, shininess);
-
     //Set variable animasi
     span = 1.0;
     animationX = 1.0;
@@ -423,7 +310,6 @@
     gl.enable(gl.DEPTH_TEST);
 
     render();
-
 
   }
 
@@ -454,6 +340,24 @@
     // gl.drawArrays(gl.TRIANGLES, 0, 36);
     gl.drawArrays(gl.TRIANGLES, 0, n1);
 
+     // Create a texture.
+     var texture = gl.createTexture();
+     gl.bindTexture(gl.TEXTURE_2D, texture);
+     
+     // Fill the texture with a 1x1 blue pixel.
+     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                   new Uint8Array([0, 0, 255, 255]));
+     
+     // Asynchronously load an image
+     var image = new Image();
+     image.src = "images/4_edit.jpg";
+     image.addEventListener('load', function() {
+       // Now that the image has loaded make copy it to the texture.
+       gl.bindTexture(gl.TEXTURE_2D, texture);
+       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
+       gl.generateMipmap(gl.TEXTURE_2D);
+     });
+
     //P
     
     //Animasi Rotasi
@@ -465,26 +369,25 @@
     //Animasi Translasi
     translateX += 0.011 * animationX;
     translateY += 0.012 * animationY;
-    translateZ += 0.005 * animationZ;
+    translateZ += 0.013 * animationZ;
 
-    if (translateX >= 0.8 - Math.abs(scaleX * 0.07)) animationX = -1.0;
-    else if (translateX <= -0.8 + Math.abs(scaleX * 0.07)) animationX = 1.0;
-    gl.uniform1f(translateXUniformLocation, translateX);
-
+    if (translateX >= 0.8 - Math.abs(scaleX * 0.08)) animationX = -1.0;
+    else if (translateX <= -0.8 + Math.abs(scaleX * 0.08)) animationX = 1.0;
+    
     if (translateY >= 0.8 - 0.4) animationY = -1.0;
     else if (translateY <= -0.8 + 0.1) animationY = 1.0;
-    gl.uniform1f(translateYUniformLocation, translateY);
-
+    
     if (translateZ >= 0.8 ) animationZ = -1.0;
     else if (translateZ <= -0.8 ) animationZ = 1.0;
+    
+    gl.uniform1f(translateXUniformLocation, translateX);
+    gl.uniform1f(translateYUniformLocation, translateY);
     gl.uniform1f(translateZUniformLocation, translateZ);
 
-    // Animasi Light
-    dd = glMatrix.vec3.fromValues(center); //Diffuse Position
+    //Animasi Lighting
+    ddLoc = gl.getUniformLocation(program, 'diffusePosition');
+    dd = glMatrix.vec3.fromValues(translateX, translateY, translateZ);
     gl.uniform3fv(ddLoc, dd);
-
-    var cameras = [translateX, translateY, translateZ];
-    gl.uniform3fv(viewWorldPositionLocation, cameras);
 
     //Switch Mode
     flag = 1.0;
@@ -513,19 +416,11 @@
     program = glUtils.createProgram(gl, vertexShader, fragmentShader);
     gl.useProgram(program);
 
-    // quad(1, 0, 3, 2);
     quad(2, 3, 7, 6);
     quad(3, 0, 4, 7);
     quad(4, 5, 6, 7);
     quad(5, 4, 0, 1);
     quad(6, 5, 1, 2);
-
-    // quadline(1, 0, 3, 2); // Depan
-    // quadline(2, 3, 7, 6); // Kanan
-    // quadline(6, 5, 1, 2); // Atas
-    // quadline(5, 4, 0, 1); // Kiri
-    // quadline(4, 7, 3, 0); // Bawah
-    // quadline(4, 5, 6, 7); // Belakang
 
     n1 = initBuffers(gl,vertices);
     n2 = initBuffers2(gl, vertices5, vertices6, 0.15, -0.07, 0.25);
