@@ -2,10 +2,11 @@
 
   var canvas, gl, vertexShader, fragmentShader, program,
   thetaUniformLocation, theta, thetaSpeed, axis, x, y, z, n1, n2,
-  mmLoc, mm, vmLoc, vm, pmLoc, pm, camera, nmLoc,
-  flagUniformLocation, flag, scaleXUniformLocation, scaleYUniformLocation, scaleX, scaleY,
+  mmLoc, mm, vmLoc, vm, pmLoc, pm, camera, nmLoc, dc, dd, ac, dcLoc, ddLoc, acLoc,
+  flagUniformLocation, flag, scaleXUniformLocation, scaleYUniformLocation, scaleX,
   translateX, translateXUniformLocation, translateY, translateYUniformLocation, translateZ, translateZUniformLocation,
-  animationX, animationY, animationZ;
+  animationX, animationY, animationZ,
+  viewWorldPositionLocation, shininessLocation;
 
   // Vertex Cube
   var vertices = [];
@@ -23,7 +24,7 @@
 
   var cubeColors = [
     [],
-    [1.0, 1.0, 1.0], // merah
+    [], // merah
     [0.0, 1.0, 0.0], // hijau
     [0.0, 0.0, 1.0], // biru
     [1.0, 0.0, 0.0], // putih
@@ -34,12 +35,12 @@
 
   var cubeNormals = [
     [],
-    [0.0, 0.0, 1.0], // depan
-    [1.0, 0.0, 0.0], // kanan
-    [0.0, -1.0, 0.0], // bawah
-    [0.0, 0.0, -1.0], // belakang
-    [-1.0, 0.0, 0.0], // kiri
-    [0.0, 1.0, 0.0], // atas
+    [], // depan
+    [-1.0, 0.0, 0.0], // kanan
+    [0.0, 1.0, 0.0], // bawah
+    [0.0, 0.0, 1.0], // belakang
+    [1.0, 0.0, 0.0], // kiri
+    [0.0, -1.0, 0.0], // atas
     []
   ];
 
@@ -56,6 +57,59 @@
   -0.07, 0.35, 0.0, 1.0, 1.0, 1.0
   
   ];
+
+  // Fill the buffer with texture coordinates the cube.
+// function setTexcoords(gl) {
+//   gl.bufferData(
+//       gl.ARRAY_BUFFER,
+//       new Float32Array(
+//         [
+//         // select the top left image
+//         0   , 0  ,
+//         0   , 0.5,
+//         0.25, 0  ,
+//         0   , 0.5,
+//         0.25, 0.5,
+//         0.25, 0  ,
+//         // select the top middle image
+//         0.25, 0  ,
+//         0.5 , 0  ,
+//         0.25, 0.5,
+//         0.25, 0.5,
+//         0.5 , 0  ,
+//         0.5 , 0.5,
+//         // select to top right image
+//         0.5 , 0  ,
+//         0.5 , 0.5,
+//         0.75, 0  ,
+//         0.5 , 0.5,
+//         0.75, 0.5,
+//         0.75, 0  ,
+//         // select the bottom left image
+//         0   , 0.5,
+//         0.25, 0.5,
+//         0   , 1  ,
+//         0   , 1  ,
+//         0.25, 0.5,
+//         0.25, 1  ,
+//         // select the bottom middle image
+//         0.25, 0.5,
+//         0.25, 1  ,
+//         0.5 , 0.5,
+//         0.25, 1  ,
+//         0.5 , 1  ,
+//         0.5 , 0.5,
+//         // select the bottom right image
+//         0.5 , 0.5,
+//         0.75, 0.5,
+//         0.5 , 1  ,
+//         0.5 , 1  ,
+//         0.75, 0.5,
+//         0.75, 1  ,
+
+//       ]),
+//       gl.STATIC_DRAW);
+// }
 
   //Quad
   function quad(a, b, c, d) {
@@ -149,57 +203,52 @@
   //Init Buffer Cube
   function initBuffers(gl, vertices) {
 
-    // Membuat vertex buffer object (CPU Memory <==> GPU Memory)
-    var vertexBufferObject = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferObject);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+  // Membuat vertex buffer object (CPU Memory <==> GPU Memory)
+  var vertexBufferObject = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferObject);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
 
-    // Membuat sambungan untuk attribute
-    //Cube
-    var vPosition = gl.getAttribLocation(program, 'vPosition');
-    var vNormal = gl.getAttribLocation(program, 'vNormal');
-    var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
-      
-    ntotal = vertices.length / 6;
+  // Membuat sambungan untuk attribute
+
+  var vPosition = gl.getAttribLocation(program, 'vPosition');
+  var vNormal = gl.getAttribLocation(program, 'vNormal');
+  var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
+    
+  ntotal = vertices.length / 6;
+
+  //Attrib Pointer
+  gl.vertexAttribPointer(
+    vPosition,    // variabel yang memegang posisi attribute di shader
+    3,            // jumlah elemen per atribut
+    gl.FLOAT,     // tipe data atribut
+    gl.FALSE, 
+    11 * Float32Array.BYTES_PER_ELEMENT, // ukuran byte tiap verteks (overall) 
+    0                                   // offset dari posisi elemen di array
+  );
+
+  gl.vertexAttribPointer(
+    vNormal, 
+    3, 
+    gl.FLOAT, 
+    gl.FALSE,
+    11 * Float32Array.BYTES_PER_ELEMENT, 
+    6 * Float32Array.BYTES_PER_ELEMENT
+  );
+
+  gl.vertexAttribPointer(
+    vTexCoord, 
+    2, 
+    gl.FLOAT, 
+    gl.FALSE,
+    11 * Float32Array.BYTES_PER_ELEMENT, 
+    9 * Float32Array.BYTES_PER_ELEMENT
+  );
   
-    //Attrib Pointer
-    //Cube
-    gl.vertexAttribPointer(
-      vPosition,    // variabel yang memegang posisi attribute di shader
-      3,            // jumlah elemen per atribut
-      gl.FLOAT,     // tipe data atribut
-      gl.FALSE, 
-      11 * Float32Array.BYTES_PER_ELEMENT, // ukuran byte tiap verteks (overall) 
-      0                                   // offset dari posisi elemen di array
-    );
+  gl.enableVertexAttribArray(vPosition);
+  gl.enableVertexAttribArray(vNormal);
+  gl.enableVertexAttribArray(vTexCoord);
 
-    //Cube
-    gl.vertexAttribPointer(
-      vNormal, 
-      3, 
-      gl.FLOAT, 
-      gl.FALSE,
-      11 * Float32Array.BYTES_PER_ELEMENT, 
-      6 * Float32Array.BYTES_PER_ELEMENT
-    );
-    
-    gl.vertexAttribPointer(
-      vTexCoord, 
-      2, 
-      gl.FLOAT, 
-      gl.FALSE,
-      11 * Float32Array.BYTES_PER_ELEMENT, 
-      9 * Float32Array.BYTES_PER_ELEMENT
-    );
-
-    
-
-    //Cube
-    gl.enableVertexAttribArray(vPosition);
-    gl.enableVertexAttribArray(vNormal);
-    gl.enableVertexAttribArray(vTexCoord);
-
-    return ntotal;
+  return ntotal;
   }
 
   //Init Buffer P
@@ -288,17 +337,6 @@
     );
     gl.uniformMatrix4fv(pmLoc, false, pm);
 
-    // Uniform untuk pencahayaan
-    var dcLoc = gl.getUniformLocation(program, 'diffuseColor');
-    var dc = glMatrix.vec3.fromValues(1.0, 1.0, 1.0);  // rgb
-    gl.uniform3fv(dcLoc, dc);
-    var ddLoc = gl.getUniformLocation(program, 'diffusePosition');
-    var dd = glMatrix.vec3.fromValues(1., 2., 1.7);  // xyz
-    gl.uniform3fv(ddLoc, dd);
-    var acLoc = gl.getUniformLocation(program, 'ambientColor');
-    var ac = glMatrix.vec3.fromValues(0.2, 0.2, 0.2);
-    gl.uniform3fv(acLoc, ac);
-
     //Uniform untuk modelMatrix vektor normal
     nmLoc = gl.getUniformLocation(program, 'normalMatrix');
 
@@ -321,7 +359,7 @@
 
     // Asynchronously load an image
     var image = new Image();
-    image.src = "images/tes.bmp";
+    image.src = "images/2_edit.jpg";
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -333,10 +371,6 @@
     scaleXUniformLocation = gl.getUniformLocation(program, 'scaleX');
     scaleX = 1.0; 
     gl.uniform1f(scaleXUniformLocation, scaleX);
-
-    scaleYUniformLocation = gl.getUniformLocation(program, 'scaleY');
-    scaleY = 1.0; 
-    gl.uniform1f(scaleYUniformLocation, scaleY);
 
     // Set translate
     translateXUniformLocation = gl.getUniformLocation(program, 'translateX');
@@ -350,6 +384,26 @@
     translateZUniformLocation = gl.getUniformLocation(program, 'translateZ');
     translateZ = 0.0; 
     gl.uniform1f(translateZUniformLocation, translateZ);
+
+    //Set Lighting
+    dcLoc = gl.getUniformLocation(program, 'diffuseColor');
+    ddLoc = gl.getUniformLocation(program, 'diffusePosition');
+    acLoc = gl.getUniformLocation(program, 'ambientColor');
+    center = gl.getUniformLocation(program, 'diffusePosition');
+
+    dc = glMatrix.vec3.fromValues(1.0, 1.0, 1.0); //Diffuse Color
+    gl.uniform3fv(dcLoc, dc);
+    ac = glMatrix.vec3.fromValues(0.17, 0.40, 0.41); //Ambient Color
+    gl.uniform3fv(acLoc, ac);
+
+    specularColor = gl.getUniformLocation(program, 'specularColor');
+    viewWorldPositionLocation = gl.getUniformLocation(program, "u_viewWorldPosition");
+    shininessLocation = gl.getUniformLocation(program, "u_shininess");
+
+    spec = glMatrix.vec3.fromValues(1.0, 0.0, 0.0); //Diffuse Color
+    gl.uniform3fv(specularColor, spec);
+    shininess = 41;
+    gl.uniform1f(shininessLocation, shininess);
 
     //Set variable animasi
     span = 1.0;
@@ -409,20 +463,28 @@
     gl.uniform1f(scaleXUniformLocation, scaleX);
 
     //Animasi Translasi
+    translateX += 0.011 * animationX;
+    translateY += 0.012 * animationY;
+    translateZ += 0.005 * animationZ;
+
     if (translateX >= 0.8 - Math.abs(scaleX * 0.07)) animationX = -1.0;
     else if (translateX <= -0.8 + Math.abs(scaleX * 0.07)) animationX = 1.0;
-    translateX += 0.01 * animationX;
     gl.uniform1f(translateXUniformLocation, translateX);
 
     if (translateY >= 0.8 - 0.4) animationY = -1.0;
     else if (translateY <= -0.8 + 0.1) animationY = 1.0;
-    translateY += 0.011 * animationY;
     gl.uniform1f(translateYUniformLocation, translateY);
 
-    if (translateZ >= 0.8) animationZ = -1.0;
-    else if (translateZ <= -0.8) animationZ = 1.0;
-    translateZ += 0.013 * animationZ;
+    if (translateZ >= 0.8 ) animationZ = -1.0;
+    else if (translateZ <= -0.8 ) animationZ = 1.0;
     gl.uniform1f(translateZUniformLocation, translateZ);
+
+    // Animasi Light
+    dd = glMatrix.vec3.fromValues(center); //Diffuse Position
+    gl.uniform3fv(ddLoc, dd);
+
+    var cameras = [translateX, translateY, translateZ];
+    gl.uniform3fv(viewWorldPositionLocation, cameras);
 
     //Switch Mode
     flag = 1.0;

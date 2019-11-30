@@ -19,14 +19,29 @@ uniform mat3 normalMatrix;  // Berperan sebagai modelMatrix-nya vektor normal
 attribute vec3 vPositionP;
 varying vec3 fColor;
 attribute vec3 vColor;
-uniform float scaleX, scaleY, translateX, translateY, translateZ;
+uniform float scaleX, translateX, translateY, translateZ;
 
 //Switch
 uniform float flag;
 
+//surfaceWorldPosition = fposition
+//u_lightWorldPosition = diffuseposition
+//surfaceToLightDirection = diffusedirection
+
+varying vec3 diffusePosition;
+
+//Specular
+uniform vec3 u_viewWorldPosition;
+varying vec3 v_surfaceToView;
+
+
 void main() 
 {
   vec3 translateP = vec3(translateX, translateY , translateZ);
+
+  // compute the vector of the surface to the view/camera
+  // and pass it to the fragment shader
+  v_surfaceToView = u_viewWorldPosition - fPosition;
 
   mat4 mTransformP = mat4(
     1.0, 0.0, 0.0, 0.0,
@@ -37,15 +52,18 @@ void main()
 
   mat4 mScale = mat4(
     scaleX, 0.0, 0.0, 0.0,
-    0.0, scaleY, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0 
   );
+
+  diffusePosition = vec3(mTransformP * mScale * vec4(vPositionP, 1.0));
 
   if(flag == 0.0)
   {
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(vPosition, 1.0);
 
+    // fColor = vColor;
     // Transfer koordinat tekstur ke fragment shader
     fTexCoord = vTexCoord;
 
