@@ -125,6 +125,100 @@
     else if (event.keyCode == 39) camera.x += 0.1;      // Numpad Kanan
   }
 
+// Fill the buffer with texture coordinates the cube.
+function setTexcoords(gl) {
+  gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(
+        [
+        // select the top left image
+        0   , 0  ,
+        0   , 0.5,
+        0.25, 0.5,
+        0   , 0  ,
+        0.25, 0.5,
+        0.25, 0  ,
+        
+        // select the top middle image
+        0.25 , 0.0,
+        0.25 , 0.5,
+        0.5  , 0.5,
+        0.25 , 0.0,
+        0.5  , 0.5,
+        0.5  , 0.0,
+
+        // select to top right image
+        0.5 , 0  ,
+        0.5 , 0.5,
+        0.75, 0.5,
+        0.5 , 0  ,
+        0.75, 0.5,
+        0.75, 0  ,
+
+        // select the bottom left image
+        0   , 0.5,
+        0   , 1  ,
+        0.25, 1  ,
+        0   , 0.5,
+        0.25, 1  ,
+        0.25, 0.5,
+
+        // select the bottom middle image
+        0.25, 0.5,
+        0.25, 1  ,
+        0.5 , 1  ,
+        0.25, 0.5,
+        0.5 , 1  ,
+        0.5 , 0.5,
+
+      ]),
+      gl.STATIC_DRAW);
+}
+
+  function initTexture(gl)
+  {
+    var texcoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+    // Set Texcoords.
+    setTexcoords(gl);
+
+    var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
+
+    gl.enableVertexAttribArray(vTexCoord);
+
+    // Bind the position buffer.
+    gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+
+    // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
+    var size = 2;          // 2 components per iteration
+    var type = gl.FLOAT;   // the data is 32bit floats
+    var normalize = false; // don't normalize the data
+    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
+    var offset = 0;        // start at the beginning of the buffer
+    gl.vertexAttribPointer(
+      vTexCoord, size, type, normalize, stride, offset
+    );
+
+    // Create a texture.
+    var texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    
+    // Fill the texture with a 1x1 blue pixel.
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                  new Uint8Array([0, 0, 255, 255]));
+    
+    // Asynchronously load an image
+    var image = new Image();
+    image.src = "images/final.jpg";
+    image.addEventListener('load', function() {
+      // Now that the image has loaded make copy it to the texture.
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
+      gl.generateMipmap(gl.TEXTURE_2D);
+    });
+
+  }
+
   //Init Buffer Cube
   function initBuffers(gl, vertices) {
 
@@ -137,7 +231,7 @@
 
   var vPosition = gl.getAttribLocation(program, 'vPosition');
   var vNormal = gl.getAttribLocation(program, 'vNormal');
-  var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
+  // var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
     
   ntotal = vertices.length / 6;
 
@@ -160,18 +254,18 @@
     6 * Float32Array.BYTES_PER_ELEMENT
   );
 
-  gl.vertexAttribPointer(
-    vTexCoord, 
-    2, 
-    gl.FLOAT, 
-    gl.FALSE,
-    11 * Float32Array.BYTES_PER_ELEMENT, 
-    9 * Float32Array.BYTES_PER_ELEMENT
-  );
+  // gl.vertexAttribPointer(
+  //   vTexCoord, 
+  //   2, 
+  //   gl.FLOAT, 
+  //   gl.FALSE,
+  //   11 * Float32Array.BYTES_PER_ELEMENT, 
+  //   9 * Float32Array.BYTES_PER_ELEMENT
+  // );
   
   gl.enableVertexAttribArray(vPosition);
   gl.enableVertexAttribArray(vNormal);
-  gl.enableVertexAttribArray(vTexCoord);
+  // gl.enableVertexAttribArray(vTexCoord);
 
   return ntotal;
   }
@@ -340,24 +434,6 @@
     // gl.drawArrays(gl.TRIANGLES, 0, 36);
     gl.drawArrays(gl.TRIANGLES, 0, n1);
 
-     // Create a texture.
-     var texture = gl.createTexture();
-     gl.bindTexture(gl.TEXTURE_2D, texture);
-     
-     // Fill the texture with a 1x1 blue pixel.
-     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-                   new Uint8Array([0, 0, 255, 255]));
-     
-     // Asynchronously load an image
-     var image = new Image();
-     image.src = "images/4_edit.jpg";
-     image.addEventListener('load', function() {
-       // Now that the image has loaded make copy it to the texture.
-       gl.bindTexture(gl.TEXTURE_2D, texture);
-       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,gl.UNSIGNED_BYTE, image);
-       gl.generateMipmap(gl.TEXTURE_2D);
-     });
-
     //P
     
     //Animasi Rotasi
@@ -416,14 +492,15 @@
     program = glUtils.createProgram(gl, vertexShader, fragmentShader);
     gl.useProgram(program);
 
-    quad(2, 3, 7, 6);
-    quad(3, 0, 4, 7);
-    quad(4, 5, 6, 7);
-    quad(5, 4, 0, 1);
-    quad(6, 5, 1, 2);
+    quad(2, 3, 7, 6); //Kanan
+    quad(3, 0, 4, 7); //Bawah
+    quad(4, 5, 6, 7); //Belakang
+    quad(5, 4, 0, 1); //Kiri
+    quad(6, 5, 1, 2); //Atas
 
     n1 = initBuffers(gl,vertices);
     n2 = initBuffers2(gl, vertices5, vertices6, 0.15, -0.07, 0.25);
+    initTexture(gl);
 
     draw();
   }
