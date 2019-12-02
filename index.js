@@ -1,7 +1,7 @@
 (function() {
 
   var canvas, gl, vertexShader, fragmentShader, program,
-  thetaSpeed, axis, x, y, z, n1, n2,
+  n1, n2,
   mmLoc, mm, vmLoc, vm, pmLoc, pm, camera, nmLoc, dc, dd, ac, dcLoc, ddLoc, acLoc, vPositionP,
   flagUniformLocation, flag, scaleXUniformLocation, scaleX,
   translateX, translateXUniformLocation, translateY, translateYUniformLocation, translateZ, translateZUniformLocation,
@@ -72,19 +72,19 @@
       }
       switch (indices[i]) {
         case a:
-          vertices.push(0.0);
+          vertices.push((a-2) * 0.125);
           vertices.push(0.0);
           break;
         case b:
-          vertices.push(0.0);
+          vertices.push((a-2) * 0.125);
           vertices.push(1.0);
           break;
         case c:
-          vertices.push(1.0);
+          vertices.push((a-1) * 0.125);
           vertices.push(1.0);
           break;
         case d:
-          vertices.push(1.0);
+          vertices.push((a-1) * 0.125);
           vertices.push(0.0);
           break;
       
@@ -104,28 +104,6 @@
       gl.maxHeight = height;
     }
   }
-
-  // Kontrol menggunakan keyboard
-  // function onKeyDown(event) {
-
-  //   //Chrome Configuration
-  //   if (event.keyCode == 189) thetaSpeed -= 0.01;       // key '-'
-  //   else if (event.keyCode == 187) thetaSpeed += 0.01;  // key '='
-  //   else if (event.keyCode == 48) thetaSpeed = 0;       // key '0'
-
-  //   if (event.keyCode == 55) axis[x] = !axis[x];        //Key 7
-  //   if (event.keyCode == 56) axis[y] = !axis[y];        //Key 8
-  //   if (event.keyCode == 57) axis[z] = !axis[z];        //Key 9
-
-  //   if (event.keyCode == 45) camera.z -= 0.1;           //Numpad 5
-  //   else if (event.keyCode == 12) camera.z += 0.1;      //Numpad 0
-
-  //   if (event.keyCode == 38) camera.y -= 0.1;           // Numpad atas 
-  //   else if (event.keyCode == 40) camera.y += 0.1;      // Numpad Bawah
-
-  //   if (event.keyCode == 37) camera.x -= 0.1;           //Numpad Kiri
-  //   else if (event.keyCode == 39) camera.x += 0.1;      // Numpad Kanan
-  // }
 
   //Control With Mouse
 
@@ -191,81 +169,8 @@
     m[10] = c*m[10]-s*mv8;
  }
   
-
-// Fill the buffer with texture coordinates the cube.
-function setTexcoords(gl) {
-  gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array(
-        [
-        // select the top left image
-        0   , 0  ,
-        0   , 0.5,
-        0.25, 0.5,
-        0   , 0  ,
-        0.25, 0.5,
-        0.25, 0  ,
-        
-        // select the top middle image
-        0.25 , 0.0,
-        0.25 , 0.5,
-        0.5  , 0.5,
-        0.25 , 0.0,
-        0.5  , 0.5,
-        0.5  , 0.0,
-
-        // select to top right image
-        0.5 , 0  ,
-        0.5 , 0.5,
-        0.75, 0.5,
-        0.5 , 0  ,
-        0.75, 0.5,
-        0.75, 0  ,
-
-        // select the bottom left image
-        0   , 0.5,
-        0   , 1  ,
-        0.25, 1  ,
-        0   , 0.5,
-        0.25, 1  ,
-        0.25, 0.5,
-
-        // select the bottom middle image
-        0.25, 0.5,
-        0.25, 1  ,
-        0.5 , 1  ,
-        0.25, 0.5,
-        0.5 , 1  ,
-        0.5 , 0.5,
-
-      ]),
-      gl.STATIC_DRAW);
-}
-
   function initTexture(gl)
   {
-    var texcoordBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-    // Set Texcoords.
-    setTexcoords(gl);
-
-    var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
-
-    gl.enableVertexAttribArray(vTexCoord);
-
-    // Bind the position buffer.
-    gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
-
-    // Tell the position attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-    var size = 2;          // 2 components per iteration
-    var type = gl.FLOAT;   // the data is 32bit floats
-    var normalize = false; // don't normalize the data
-    var stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-    var offset = 0;        // start at the beginning of the buffer
-    gl.vertexAttribPointer(
-      vTexCoord, size, type, normalize, stride, offset
-    );
-
     // Create a texture.
     var texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -276,7 +181,7 @@ function setTexcoords(gl) {
     
     // Asynchronously load an image
     var image = new Image();
-    image.src = "images/final.jpg";
+    image.src = "images/final2.jpg";
     image.addEventListener('load', function() {
       // Now that the image has loaded make copy it to the texture.
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -298,7 +203,7 @@ function setTexcoords(gl) {
 
   var vPosition = gl.getAttribLocation(program, 'vPosition');
   var vNormal = gl.getAttribLocation(program, 'vNormal');
-  // var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
+  var vTexCoord = gl.getAttribLocation(program, 'vTexCoord');
     
   ntotal = vertices.length / 6;
 
@@ -321,18 +226,18 @@ function setTexcoords(gl) {
     6 * Float32Array.BYTES_PER_ELEMENT
   );
 
-  // gl.vertexAttribPointer(
-  //   vTexCoord, 
-  //   2, 
-  //   gl.FLOAT, 
-  //   gl.FALSE,
-  //   11 * Float32Array.BYTES_PER_ELEMENT, 
-  //   9 * Float32Array.BYTES_PER_ELEMENT
-  // );
+  gl.vertexAttribPointer(
+    vTexCoord, 
+    2, 
+    gl.FLOAT, 
+    gl.FALSE,
+    11 * Float32Array.BYTES_PER_ELEMENT, 
+    9 * Float32Array.BYTES_PER_ELEMENT
+  );
   
   gl.enableVertexAttribArray(vPosition);
   gl.enableVertexAttribArray(vNormal);
-  // gl.enableVertexAttribArray(vTexCoord);
+  gl.enableVertexAttribArray(vTexCoord);
 
   return ntotal;
   }
@@ -489,7 +394,6 @@ function setTexcoords(gl) {
     {
         dX *= AMORTIZATION, dY*=AMORTIZATION;
         THETA+=dX, PHI+=dY;
-
     }
 
     mm[0] = 1, mm[1] = 0, mm[2] = 0,
