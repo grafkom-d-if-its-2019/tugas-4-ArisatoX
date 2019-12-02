@@ -5,7 +5,9 @@
   mmLoc, mm, vmLoc, vm, pmLoc, pm, camera, nmLoc, dc, dd, ac, dcLoc, ddLoc, acLoc, vPositionP,
   flagUniformLocation, flag, scaleXUniformLocation, scaleX,
   translateX, translateXUniformLocation, translateY, translateYUniformLocation, translateZ, translateZUniformLocation,
-  animationX, animationY, animationZ;
+  animationX, animationY, animationZ,
+  AMORTIZATION, drag, old_x, old_y, dX, dY,
+  THETA, PHI, time_old;
   
   // Vertex Cube
   var vertices = [];
@@ -104,26 +106,91 @@
   }
 
   // Kontrol menggunakan keyboard
-  function onKeyDown(event) {
+  // function onKeyDown(event) {
 
-    //Chrome Configuration
-    if (event.keyCode == 189) thetaSpeed -= 0.01;       // key '-'
-    else if (event.keyCode == 187) thetaSpeed += 0.01;  // key '='
-    else if (event.keyCode == 48) thetaSpeed = 0;       // key '0'
+  //   //Chrome Configuration
+  //   if (event.keyCode == 189) thetaSpeed -= 0.01;       // key '-'
+  //   else if (event.keyCode == 187) thetaSpeed += 0.01;  // key '='
+  //   else if (event.keyCode == 48) thetaSpeed = 0;       // key '0'
 
-    if (event.keyCode == 55) axis[x] = !axis[x];        //Key 7
-    if (event.keyCode == 56) axis[y] = !axis[y];        //Key 8
-    if (event.keyCode == 57) axis[z] = !axis[z];        //Key 9
+  //   if (event.keyCode == 55) axis[x] = !axis[x];        //Key 7
+  //   if (event.keyCode == 56) axis[y] = !axis[y];        //Key 8
+  //   if (event.keyCode == 57) axis[z] = !axis[z];        //Key 9
 
-    if (event.keyCode == 45) camera.z -= 0.1;           //Numpad 5
-    else if (event.keyCode == 12) camera.z += 0.1;      //Numpad 0
+  //   if (event.keyCode == 45) camera.z -= 0.1;           //Numpad 5
+  //   else if (event.keyCode == 12) camera.z += 0.1;      //Numpad 0
 
-    if (event.keyCode == 38) camera.y -= 0.1;           // Numpad atas 
-    else if (event.keyCode == 40) camera.y += 0.1;      // Numpad Bawah
+  //   if (event.keyCode == 38) camera.y -= 0.1;           // Numpad atas 
+  //   else if (event.keyCode == 40) camera.y += 0.1;      // Numpad Bawah
 
-    if (event.keyCode == 37) camera.x -= 0.1;           //Numpad Kiri
-    else if (event.keyCode == 39) camera.x += 0.1;      // Numpad Kanan
+  //   if (event.keyCode == 37) camera.x -= 0.1;           //Numpad Kiri
+  //   else if (event.keyCode == 39) camera.x += 0.1;      // Numpad Kanan
+  // }
+
+  //Control With Mouse
+
+  function mouseControl()
+  {
+    AMORTIZATION = 0.95;
+    drag = false;
+    dX = 0; 
+    dY = 0;
+
+    var mouseDown = function(e) {
+      drag = true;
+      old_x = e.pageX, old_y = e.pageY;
+      e.preventDefault();
+      return false;
+    };
+
+    var mouseUp = function(e){
+      drag = false;
+    };
+
+    var mouseMove = function(e) {
+      if (!drag) return false;
+      dX = (e.pageX-old_x)*2*Math.PI/canvas.width,
+      dY = (e.pageY-old_y)*2*Math.PI/canvas.height;
+      THETA+= dX;
+      PHI+=dY;
+      old_x = e.pageX, old_y = e.pageY;
+      e.preventDefault();
+    };
+
+    document.addEventListener("mousedown", mouseDown, false);
+    document.addEventListener("mouseup", mouseUp, false);
+    document.addEventListener("mouseout", mouseUp, false);
+    document.addEventListener("mousemove", mouseMove, false);
   }
+
+  function rotateX(m, angle) {
+    var c = Math.cos(angle);
+    var s = Math.sin(angle);
+    var mv1 = m[1], mv5 = m[5], mv9 = m[9];
+
+    m[1] = m[1]*c-m[2]*s;
+    m[5] = m[5]*c-m[6]*s;
+    m[9] = m[9]*c-m[10]*s;
+
+    m[2] = m[2]*c+mv1*s;
+    m[6] = m[6]*c+mv5*s;
+    m[10] = m[10]*c+mv9*s;
+ }
+
+ function rotateY(m, angle) {
+    var c = Math.cos(angle);
+    var s = Math.sin(angle);
+    var mv0 = m[0], mv4 = m[4], mv8 = m[8];
+
+    m[0] = c*m[0]+s*m[2];
+    m[4] = c*m[4]+s*m[6];
+    m[8] = c*m[8]+s*m[10];
+
+    m[2] = c*m[2]-s*mv0;
+    m[6] = c*m[6]-s*mv4;
+    m[10] = c*m[10]-s*mv8;
+ }
+  
 
 // Fill the buffer with texture coordinates the cube.
 function setTexcoords(gl) {
@@ -328,6 +395,11 @@ function setTexcoords(gl) {
 
   function draw() 
   {
+    //Mouse Rotation
+    THETA = 0,
+    PHI = 0;
+    time_old = 0;
+
     // Membuat sambungan untuk uniform
     thetaUniformLocation = gl.getUniformLocation(program, 'theta');
     theta = 0;
@@ -403,18 +475,47 @@ function setTexcoords(gl) {
     gl.clearColor(255/255, 221/255, 209/255, 1.0);
     gl.enable(gl.DEPTH_TEST);
 
-    render();
+    render(0);
 
   }
 
-  function render() {
+  function render(time) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    //Animasi rotate mouse
+    var dt = time-time_old;
+
+    if (!drag) 
+    {
+        dX *= AMORTIZATION, dY*=AMORTIZATION;
+        THETA+=dX, PHI+=dY;
+
+    }
+
+    mm[0] = 1, mm[1] = 0, mm[2] = 0,
+    mm[3] = 0,
+
+    mm[4] = 0, mm[5] = 1, mm[6] = 0,
+    mm[7] = 0,
+
+    mm[8] = 0, mm[9] = 0, mm[10] = 1,
+    mm[11] = 0,
+
+    mm[12] = 0, mm[13] = 0, mm[14] = 0,
+    mm[15] = 1;
+
+    glMatrix.mat4.translate(mm, mm, [0.0, 0.0, -2.0]);
+
+    rotateY(mm, THETA);
+    rotateX(mm, PHI);
+
+    time_old = time; 
+
     //Cube
-    theta += thetaSpeed;
-    if (axis[z]) glMatrix.mat4.rotateZ(mm, mm, thetaSpeed);
-    if (axis[y]) glMatrix.mat4.rotateY(mm, mm, thetaSpeed);
-    if (axis[x]) glMatrix.mat4.rotateX(mm, mm, thetaSpeed);
+    // theta += thetaSpeed;
+    // if (axis[z]) glMatrix.mat4.rotateZ(mm, mm, thetaSpeed);
+    // if (axis[y]) glMatrix.mat4.rotateY(mm, mm, thetaSpeed);
+    // if (axis[x]) glMatrix.mat4.rotateX(mm, mm, thetaSpeed);
     gl.uniformMatrix4fv(mmLoc, false, mm);
 
     //Perhitungan modelMatrix untuk vektor normal
@@ -477,7 +578,8 @@ function setTexcoords(gl) {
 
   function main() {
 
-    document.addEventListener('keydown', onKeyDown);
+    // document.addEventListener('keydown', onKeyDown);
+    mouseControl();
 
     //Set Canvas
     canvas = document.getElementById("glcanvas");
