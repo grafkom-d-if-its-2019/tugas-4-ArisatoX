@@ -452,14 +452,14 @@
     translateY += 0.012 * animationY;
     translateZ += 0.013 * animationZ;
 
-    if (translateX >= 0.8 - Math.abs(scaleX * 0.08)) animationX = -1.0;
-    else if (translateX <= -0.8 + Math.abs(scaleX * 0.08)) animationX = 1.0;
+    if (translateX >= 0.8 - Math.abs(scaleX * 0.09)) animationX = -1.0;
+    else if (translateX <= -0.8 + Math.abs(scaleX * 0.09)) animationX = 1.0;
     
     if (translateY >= 0.8 - 0.4) animationY = -1.0;
     else if (translateY <= -0.8 + 0.1) animationY = 1.0;
     
-    if (translateZ >= 0.8 ) animationZ = -1.0;
-    else if (translateZ <= -0.8 ) animationZ = 1.0;
+    if (translateZ >= 0.8 - Math.abs(scaleX * 0.09)) animationZ = -1.0;
+    else if (translateZ <= -0.8 + Math.abs(scaleX * 0.09)) animationZ = 1.0;
     
     gl.uniform1f(translateXUniformLocation, translateX);
     gl.uniform1f(translateYUniformLocation, translateY);
